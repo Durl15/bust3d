@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DJ 3D Bust — Order Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=Literata:ital,wght@0,400;0,600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --ink:    #0f0a1e;
+  --gold:   #d4860a;
+  --gold-l: #f0b030;
+  --orange: #e85d20;
+  --green:  #1a9060;
+  --rose:   #c93060;
+  --teal:   #0f7070;
+  --purple: #5a1a8a;
+  --cream:  #fdf8f0;
+  --border: rgba(212,134,10,0.2);
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Literata', Georgia, serif; background: #0a0614; color: #e8e0f0; min-height: 100vh; }
+
+/* Login overlay */
+.login-overlay {
+  position: fixed; inset: 0; z-index: 100;
+  background: #0a0614;
+  display: flex; align-items: center; justify-content: center;
+}
+.login-box {
+  width: 340px;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 2.5rem 2rem;
+  text-align: center;
+}
+.login-box h2 { font-family:'Syne',sans-serif; font-size:22px; font-weight:800; color:#fff; margin-bottom:6px; }
+.login-box p { font-size:13px; color:rgba(255,255,255,0.4); margin-bottom:1.5rem; }
+.login-box input {
+  width:100%; padding:12px 14px; background:rgba(255,255,255,0.06);
+  border:1px solid rgba(255,255,255,0.12); border-radius:6px;
+  color:#fff; font-family:'Literata',Georgia,serif; font-size:15px;
+  outline:none; margin-bottom:12px;
+}
+.login-box input:focus { border-color:var(--gold); }
+.btn-login {
+  width:100%; padding:12px; background:linear-gradient(135deg,var(--gold),var(--orange));
+  border:none; border-radius:6px; color:#fff; font-family:'Syne',sans-serif;
+  font-size:14px; font-weight:700; cursor:pointer; letter-spacing:1px;
+}
+.login-err { font-size:12px; color:#ff6060; margin-top:8px; display:none; }
+
+/* Main layout */
+.main { padding: 2rem; max-width: 1100px; margin: 0 auto; }
+
+.topbar {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 2rem; flex-wrap: wrap; gap: 1rem;
+}
+.topbar h1 { font-family:'Syne',sans-serif; font-size:22px; font-weight:800; color:#fff; }
+.topbar p  { font-size:12px; color:rgba(255,255,255,0.35); margin-top:2px; }
+
+.stats-row {
+  display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; margin-bottom: 2rem;
+}
+.stat-card {
+  background: rgba(255,255,255,0.04); border: 1px solid var(--border);
+  border-radius: 10px; padding: 1rem; text-align: center;
+}
+.stat-val { font-family:'Syne',sans-serif; font-size:28px; font-weight:800; display:block; }
+.stat-lbl { font-size:10px; color:rgba(255,255,255,0.35); letter-spacing:1.5px; text-transform:uppercase; }
+
+/* Filters */
+.filters {
+  display:flex; gap:8px; margin-bottom:1.5rem; flex-wrap:wrap; align-items:center;
+}
+.filter-btn {
+  font-family:'Syne',sans-serif; font-size:11px; font-weight:600; letter-spacing:1px;
+  text-transform:uppercase; padding:6px 14px; border-radius:20px; cursor:pointer;
+  border: 1px solid rgba(255,255,255,0.15); background:transparent; color:rgba(255,255,255,0.5);
+  transition:all 0.2s;
+}
+.filter-btn:hover, .filter-btn.active { border-color:var(--gold); color:var(--gold-l); background:rgba(240,176,48,0.08); }
+.filter-search {
+  margin-left:auto; padding:7px 14px; background:rgba(255,255,255,0.05);
+  border:1px solid rgba(255,255,255,0.12); border-radius:6px;
+  color:#fff; font-family:'Literata',Georgia,serif; font-size:13px; outline:none; width:220px;
+}
+.filter-search:focus { border-color:var(--gold); }
+
+/* Orders table */
+.orders-wrap { overflow-x: auto; }
+table { width:100%; border-collapse:collapse; font-size:13px; }
+thead tr { border-bottom: 1px solid rgba(255,255,255,0.08); }
+thead th {
+  font-family:'Syne',sans-serif; font-size:9px; font-weight:600;
+  letter-spacing:2px; text-transform:uppercase; color:rgba(255,255,255,0.3);
+  padding:10px 12px; text-align:left; white-space:nowrap;
+}
+tbody tr { border-bottom:1px solid rgba(255,255,255,0.05); transition:background 0.15s; }
+tbody tr:hover { background:rgba(255,255,255,0.03); }
+tbody td { padding:12px 12px; vertical-align:middle; }
+.order-id { font-family:'Syne',sans-serif; font-weight:700; color:var(--gold-l); font-size:14px; }
+.customer-name { font-weight:600; color:#fff; }
+.customer-email { font-size:11px; color:rgba(255,255,255,0.4); }
+.size-tag {
+  display:inline-block; background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.12);
+  border-radius:4px; padding:2px 8px; font-family:'Syne',sans-serif; font-size:10px;
+  font-weight:600; color:rgba(255,255,255,0.7); white-space:nowrap;
+}
+.finish-tag {
+  display:inline-block; font-family:'Syne',sans-serif; font-size:10px;
+  font-weight:600; padding:2px 8px; border-radius:4px; margin-top:3px;
+}
+.finish-tag.stone { background:rgba(160,150,130,0.2); color:#c8c0b0; }
+.finish-tag.white { background:rgba(230,230,230,0.15); color:#e0e0e0; }
+.price-cell { font-family:'Syne',sans-serif; font-weight:700; color:var(--gold-l); }
+
+/* Status badge */
+.status-sel {
+  font-family:'Syne',sans-serif; font-size:10px; font-weight:700;
+  padding:4px 10px; border-radius:20px; border:none; cursor:pointer; outline:none;
+}
+.status-Received  { background:rgba(90,26,138,0.3); color:#c080ff; }
+.status-Modeling  { background:rgba(232,93,32,0.25); color:#ff9040; }
+.status-Printing  { background:rgba(15,128,128,0.25); color:#40d0d0; }
+.status-Ready     { background:rgba(26,144,96,0.3); color:#50e0a0; }
+.status-Delivered { background:rgba(240,176,48,0.2); color:#d4860a; }
+.status-Cancelled { background:rgba(200,48,96,0.2); color:#ff6090; }
+
+/* Photo thumb */
+.photo-thumb {
+  width:40px; height:40px; border-radius:50%; object-fit:cover;
+  border:2px solid var(--gold); cursor:pointer; transition:transform 0.2s;
+}
+.photo-thumb:hover { transform:scale(1.1); }
+.no-photo { width:40px; height:40px; border-radius:50%; background:rgba(255,255,255,0.06); display:inline-flex; align-items:center; justify-content:center; font-size:16px; }
+
+/* Delete button */
+.btn-del {
+  background:none; border:none; color:rgba(200,48,96,0.5); cursor:pointer;
+  font-size:16px; padding:4px; transition:color 0.2s;
+}
+.btn-del:hover { color:#ff6090; }
+
+/* Photo modal */
+.modal-overlay {
+  display:none; position:fixed; inset:0; background:rgba(0,0,0,0.85);
+  z-index:200; align-items:center; justify-content:center;
+}
+.modal-overlay.open { display:flex; }
+.modal-img { max-width:90vw; max-height:85vh; border-radius:8px; border:2px solid var(--gold); }
+.modal-close {
+  position:fixed; top:1rem; right:1.5rem; font-family:'Syne',sans-serif;
+  font-size:24px; color:#fff; cursor:pointer; background:none; border:none;
+}
+
+/* Empty state */
+.empty-state { text-align:center; padding:4rem 2rem; color:rgba(255,255,255,0.3); }
+.empty-state p { font-size:14px; margin-top:0.5rem; }
+
+/* Refresh button */
+.btn-refresh {
+  font-family:'Syne',sans-serif; font-size:11px; font-weight:600; letter-spacing:1px;
+  text-transform:uppercase; padding:8px 18px; border-radius:6px; cursor:pointer;
+  border:1px solid var(--border); background:transparent; color:var(--gold-l); transition:all 0.2s;
+}
+.btn-refresh:hover { background:rgba(240,176,48,0.08); }
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div class="login-overlay" id="loginOverlay">
+  <div class="login-box">
+    <h2>Admin Dashboard</h2>
+    <p>DJ 3D Bust Order Tracker</p>
+    <input type="password" id="tokenInput" placeholder="Admin token" onkeydown="if(event.key==='Enter')doLogin()">
+    <button class="btn-login" onclick="doLogin()">Sign In</button>
+    <div class="login-err" id="loginErr">Invalid token</div>
+  </div>
+</div>
+
+<!-- MAIN -->
+<div class="main" id="mainDash" style="display:none">
+  <div class="topbar">
+    <div>
+      <h1>🖨️ Order Dashboard</h1>
+      <p>DJ 3D Bust Printing · diowaj@gmail.com · Syracuse, NY</p>
+    </div>
+    <div style="display:flex;gap:8px">
+      <button class="btn-refresh" onclick="loadOrders()">↻ Refresh</button>
+      <a href="/" style="font-family:'Syne',sans-serif;font-size:11px;font-weight:600;color:var(--gold-l);text-decoration:none;padding:8px 18px;border:1px solid var(--border);border-radius:6px;letter-spacing:1px;text-transform:uppercase">View Order Page</a>
+    </div>
+  </div>
+
+  <!-- Stats -->
+  <div class="stats-row" id="statsRow">
+    <div class="stat-card"><span class="stat-val" id="sTotal">—</span><span class="stat-lbl">Total Orders</span></div>
+    <div class="stat-card"><span class="stat-val" style="color:#c080ff" id="sNew">—</span><span class="stat-lbl">Received</span></div>
+    <div class="stat-card"><span class="stat-val" style="color:#ff9040" id="sActive">—</span><span class="stat-lbl">In Progress</span></div>
+    <div class="stat-card"><span class="stat-val" style="color:#50e0a0" id="sReady">—</span><span class="stat-lbl">Ready</span></div>
+    <div class="stat-card"><span class="stat-val" style="color:var(--gold-l)" id="sDone">—</span><span class="stat-lbl">Delivered</span></div>
+  </div>
+
+  <!-- Filters -->
+  <div class="filters">
+    <button class="filter-btn active" onclick="filterOrders('all',this)">All</button>
+    <button class="filter-btn" onclick="filterOrders('Received',this)">Received</button>
+    <button class="filter-btn" onclick="filterOrders('Modeling',this)">Modeling</button>
+    <button class="filter-btn" onclick="filterOrders('Printing',this)">Printing</button>
+    <button class="filter-btn" onclick="filterOrders('Ready',this)">Ready</button>
+    <button class="filter-btn" onclick="filterOrders('Delivered',this)">Delivered</button>
+    <input class="filter-search" type="text" placeholder="Search name or ID…" oninput="searchOrders(this.value)">
+  </div>
+
+  <!-- Table -->
+  <div class="orders-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Photo</th>
+          <th>Order ID</th>
+          <th>Customer</th>
+          <th>Size / Finish</th>
+          <th>Est. Total</th>
+          <th>Date</th>
+          <th>Status</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody id="ordersBody">
+        <tr><td colspan="8"><div class="empty-state">Loading orders…</div></td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Photo Modal -->
+<div class="modal-overlay" id="photoModal" onclick="closeModal()">
+  <button class="modal-close" onclick="closeModal()">✕</button>
+  <img class="modal-img" id="modalImg" src="" alt="Customer photo">
+</div>
+
+<script>
+let allOrders = [];
+let activeFilter = 'all';
+let searchQuery = '';
+let adminToken = '';
+
+// ── Login ────────────────────────────────────────────────────────────────────
+function doLogin() {
+  const t = document.getElementById('tokenInput').value.trim();
+  if (!t) return;
+  adminToken = t;
+  loadOrders();
+}
+
+// ── Load Orders ──────────────────────────────────────────────────────────────
+async function loadOrders() {
+  try {
+    const res = await fetch('/api/orders', {
+      headers: { 'X-Admin-Token': adminToken }
+    });
+    if (res.status === 401) {
+      document.getElementById('loginErr').style.display = 'block';
+      return;
+    }
+    allOrders = await res.json();
+    document.getElementById('loginOverlay').style.display = 'none';
+    document.getElementById('mainDash').style.display = 'block';
+    updateStats();
+    renderOrders();
+  } catch(e) {
+    alert('Failed to load orders: ' + e.message);
+  }
+}
+
+// ── Stats ────────────────────────────────────────────────────────────────────
+function updateStats() {
+  document.getElementById('sTotal').textContent = allOrders.length;
+  document.getElementById('sNew').textContent   = allOrders.filter(o => o.status === 'Received').length;
+  document.getElementById('sActive').textContent = allOrders.filter(o => ['Modeling','Printing'].includes(o.status)).length;
+  document.getElementById('sReady').textContent  = allOrders.filter(o => o.status === 'Ready').length;
+  document.getElementById('sDone').textContent   = allOrders.filter(o => o.status === 'Delivered').length;
+}
+
+// ── Filter / Search ──────────────────────────────────────────────────────────
+function filterOrders(val, btn) {
+  activeFilter = val;
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  renderOrders();
+}
+
+function searchOrders(val) {
+  searchQuery = val.toLowerCase();
+  renderOrders();
+}
+
+function getFiltered() {
+  return allOrders.filter(o => {
+    const matchStatus = activeFilter === 'all' || o.status === activeFilter;
+    const matchSearch = !searchQuery ||
+      o.name.toLowerCase().includes(searchQuery) ||
+      o.id.toLowerCase().includes(searchQuery) ||
+      o.email.toLowerCase().includes(searchQuery);
+    return matchStatus && matchSearch;
+  });
+}
+
+// ── Render ───────────────────────────────────────────────────────────────────
+function renderOrders() {
+  const tbody = document.getElementById('ordersBody');
+  const filtered = getFiltered();
+
+  if (!filtered.length) {
+    tbody.innerHTML = `<tr><td colspan="8"><div class="empty-state">
+      <div style="font-size:36px">📭</div>
+      <p>No orders found.</p></div></td></tr>`;
+    return;
+  }
+
+  const statuses = ['Received','Modeling','Printing','Ready','Delivered','Cancelled'];
+
+  tbody.innerHTML = filtered.map(o => {
+    const date = new Date(o.created_at + 'Z').toLocaleDateString('en-US', {month:'short',day:'numeric',year:'numeric'});
+    const photo = o.photo_name
+      ? `<img class="photo-thumb" src="/uploads/${o.photo_name}" onclick="openModal('/uploads/${o.photo_name}')" title="View photo">`
+      : `<div class="no-photo">👤</div>`;
+    const finishClass = o.finish.toLowerCase() === 'stone' ? 'stone' : 'white';
+    const opts = statuses.map(s =>
+      `<option value="${s}" ${s===o.status?'selected':''}>${s}</option>`).join('');
+
+    return `<tr>
+      <td>${photo}</td>
+      <td><span class="order-id">#${o.id}</span></td>
+      <td>
+        <div class="customer-name">${escHtml(o.name)}</div>
+        <div class="customer-email">${escHtml(o.email)}</div>
+        ${o.phone ? `<div class="customer-email">${escHtml(o.phone)}</div>` : ''}
+        ${o.notes ? `<div class="customer-email" style="font-style:italic;margin-top:2px">"${escHtml(o.notes.substring(0,60))}${o.notes.length>60?'…':''}"</div>` : ''}
+      </td>
+      <td>
+        <span class="size-tag">${escHtml(o.size)}</span><br>
+        <span class="finish-tag ${finishClass}">${escHtml(o.finish)}</span>
+      </td>
+      <td class="price-cell">${escHtml(o.est_total || '—')}</td>
+      <td style="font-size:12px;color:rgba(255,255,255,0.4);white-space:nowrap">${date}</td>
+      <td>
+        <select class="status-sel status-${o.status.replace(' ','')}"
+                onchange="updateStatus('${o.id}', this.value, this)">${opts}</select>
+      </td>
+      <td>
+        <button class="btn-del" onclick="deleteOrder('${o.id}')" title="Delete order">🗑</button>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+// ── Update Status ────────────────────────────────────────────────────────────
+async function updateStatus(id, status, sel) {
+  sel.className = `status-sel status-${status.replace(' ','')}`;
+  try {
+    const res = await fetch(`/api/orders/${id}/status`, {
+      method: 'PATCH',
+      headers: { 'X-Admin-Token': adminToken, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ status })
+    });
+    if (!res.ok) throw new Error('Update failed');
+    const o = allOrders.find(x => x.id === id);
+    if (o) o.status = status;
+    updateStats();
+  } catch(e) {
+    alert('Failed to update status: ' + e.message);
+  }
+}
+
+// ── Delete ───────────────────────────────────────────────────────────────────
+async function deleteOrder(id) {
+  if (!confirm(`Delete order #${id}? This cannot be undone.`)) return;
+  try {
+    const res = await fetch(`/api/orders/${id}`, {
+      method: 'DELETE',
+      headers: { 'X-Admin-Token': adminToken }
+    });
+    if (!res.ok) throw new Error('Delete failed');
+    allOrders = allOrders.filter(o => o.id !== id);
+    updateStats();
+    renderOrders();
+  } catch(e) {
+    alert('Failed to delete order: ' + e.message);
+  }
+}
+
+// ── Photo Modal ──────────────────────────────────────────────────────────────
+function openModal(src) {
+  document.getElementById('modalImg').src = src;
+  document.getElementById('photoModal').classList.add('open');
+  event.stopPropagation();
+}
+function closeModal() {
+  document.getElementById('photoModal').classList.remove('open');
+}
+
+// ── Helpers ──────────────────────────────────────────────────────────────────
+function escHtml(s) {
+  return String(s)
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// Auto-refresh every 60s
+setInterval(() => { if (adminToken && document.getElementById('mainDash').style.display !== 'none') loadOrders(); }, 60000);
+</script>
+</body>
+</html>
