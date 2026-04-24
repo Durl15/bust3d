@@ -23,7 +23,7 @@ GMAIL_PASS   = os.getenv("GMAIL_PASS",   "")          # App password from env
 ADMIN_TOKEN  = os.getenv("ADMIN_TOKEN",  "djbust2026") # Change before deploy
 BASE_URL     = os.getenv("BASE_URL",     "http://localhost:8000")
 
-UPLOADS_DIR.mkdir(parents=True, exist_ok=True)
+UPLOADS_DIR.mkdir(parents=True, exist_ok=True)`n(BASE_DIR / "data").mkdir(parents=True, exist_ok=True)
 
 # ── Database ─────────────────────────────────────────────────────────────────
 def get_db():
