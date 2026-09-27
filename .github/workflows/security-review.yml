@@ -1,0 +1,64 @@
+name: Security Review
+
+on:
+  pull_request:
+    branches: ["**"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: security-review-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  secrets:
+    name: Secret scan (gitleaks)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  sast:
+    name: Static analysis (semgrep)
+    runs-on: ubuntu-latest
+    container:
+      image: semgrep/semgrep:latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Semgrep scan
+        run: |
+          semgrep scan \
+            --config p/default \
+            --config p/owasp-top-ten \
+            --config p/secrets \
+            --metrics off \
+            --error \
+            --exclude node_modules --exclude .venv --exclude dist
+
+  dependencies:
+    name: Dependency audit
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Python audit
+        if: hashFiles('**/requirements*.txt') != ''
+        run: |
+          python3 -m pip install --quiet pip-audit
+          for f in $(git ls-files '*requirements*.txt'); do
+            echo "Auditing $f"
+            pip-audit -r "$f" --strict --progress-spinner off
+          done
+      - name: Node audit
+        if: hashFiles('**/package-lock.json') != ''
+        run: |
+          for lock in $(git ls-files '*package-lock.json' | grep -v node_modules); do
+            dir=$(dirname "$lock")
+            echo "Auditing $dir"
+            (cd "$dir" && npm audit --audit-level=high --omit=dev)
+          done

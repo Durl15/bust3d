@@ -1,0 +1,80 @@
+# yaml-language-server: $schema=https://coderabbit.ai/integrations/schema.v2.json
+# DJ AI Business Consultant LLC - standard AI PR review config
+language: en-US
+tone_instructions: "Direct, senior-engineer tone. Security and performance findings first. No praise, no filler."
+early_access: false
+
+reviews:
+  profile: assertive
+  request_changes_workflow: true
+  high_level_summary: true
+  poem: false
+  review_status: true
+  collapse_walkthrough: true
+  sequence_diagrams: false
+  auto_review:
+    enabled: true
+    drafts: false
+    base_branches:
+      - ".*"
+  path_filters:
+    - "!**/node_modules/**"
+    - "!**/dist/**"
+    - "!**/build/**"
+    - "!**/.venv/**"
+    - "!**/*.lock"
+    - "!**/package-lock.json"
+    - "!**/*.min.js"
+    - "!**/*.sqlite"
+    - "!**/*.db"
+  path_instructions:
+    - path: "**/*"
+      instructions: |
+        Review priority order: 1) security, 2) performance, 3) correctness, 4) maintainability.
+        SECURITY: flag hardcoded secrets, API keys (Anthropic, GCP, SAM.gov, Stripe, Twilio), tokens in logs,
+        SQL built by string concatenation, missing input validation, path traversal, SSRF, unsafe deserialization,
+        permissive CORS, missing auth on endpoints, PII/PHI exposure (HIPAA-relevant for healthcare projects),
+        and multi-tenant data leakage between tenants.
+        PERFORMANCE: flag N+1 queries, blocking I/O inside async code, unbounded loops or result sets,
+        missing pagination, repeated LLM/API calls that could be cached or batched, large payloads in memory.
+        Skip style nitpicks that a linter already covers.
+    - path: "**/*.py"
+      instructions: |
+        FastAPI: every route needs auth dependency unless explicitly public; Pydantic models for all request bodies;
+        no sync requests/sqlite calls inside async def without run_in_threadpool.
+        SQLite: parameterized queries only. Anthropic SDK: key from environment only, handle rate limits and timeouts.
+    - path: "**/*.{js,jsx,ts,tsx}"
+      instructions: |
+        Flag secrets or API keys shipped to the browser, dangerouslySetInnerHTML, unsanitized user HTML,
+        client-side calls that should go through a Netlify function, and unnecessary re-renders in React.
+    - path: "**/*.ps1"
+      instructions: |
+        Flag plaintext credentials, Invoke-Expression on untrusted input, missing -ErrorAction handling,
+        and scheduled tasks running with more privilege than needed.
+    - path: "**/*.gs"
+      instructions: |
+        Google Apps Script: flag keys stored in code instead of PropertiesService, over-broad OAuth scopes,
+        and UrlFetchApp calls without muteHttpExceptions/error handling.
+    - path: ".github/workflows/**"
+      instructions: |
+        Flag pull_request_target with checkout of PR code, unpinned third-party actions, and over-broad permissions.
+  tools:
+    gitleaks:
+      enabled: true
+    ruff:
+      enabled: true
+    eslint:
+      enabled: true
+    shellcheck:
+      enabled: true
+    actionlint:
+      enabled: true
+    markdownlint:
+      enabled: false
+
+chat:
+  auto_reply: true
+
+knowledge_base:
+  learnings:
+    scope: global
